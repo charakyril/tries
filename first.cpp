@@ -1,90 +1,129 @@
-#include <iostream> // include the iostream header to use std::cout and std::endl
-#include <string> // include the string header for std::string type
+#include <iostream>
+#include <string>
+#include <vector>
+#include <cctype>
 
-// Class that represents a protein with id, name and sequence
-class Protein { // begin definition of the Protein class
-private: // start private section: members not directly accessible from outside
-    std::string id_; // private member to store the protein identifier (e.g., "ENSP1234")
-    std::string name_; // private member to store the protein name (e.g., "PTEN")
-    std::string sequence_; // private member to store the amino acid sequence
+using namespace std;
 
-public: // start public section: constructors, setters, getters, and methods accessible from outside
-    // Constructors
-    Protein() = default; // default constructor (compiler-generated implementation)
-    Protein(const std::string& id, const std::string& name, const std::string& sequence) // parameterized constructor
-        : id_(id), name_(name), sequence_(sequence) {} // initialize members using member initializer list
+ 
+    /* ============================================================
+       BASE CLASS: Sequence
+       ============================================================ */
+    class Sequence {
+    protected:
+        string data;
+        static int count;
 
-    // Setters
-    void setId(const std::string& id) { id_ = id; } // set the id_ member to the provided id
-    void setName(const std::string& name) { name_ = name; } // set the name_ member to the provided name
-    void setSequence(const std::string& sequence) { sequence_ = sequence; } // set the sequence_ member
+    public:
+        Sequence(const string& d = "") : data(d) {
+            ++count;
+            cout << "Sequence created. Active sequences: " << count << "\n";
+        }
 
-    // Getters
-    const std::string& getId() const { return id_; } // return a const reference to id_ (no modification)
-    const std::string& getName() const { return name_; } // return a const reference to name_
-    const std::string& getSequence() const { return sequence_; } // return a const reference to sequence_
+        ~Sequence() {
+            --count;
+            cout << "Sequence destroyed. Active sequences: " << count << "\n";
+        }
 
-    // describe method: prints "name sequence"
-    void describe() const { // describe is a const method (doesn't modify the object)
-        std::cout << name_ << " " << sequence_ << std::endl; // print the protein name and sequence separated by a space
-    } // end of describe method
-}; // end of Protein class
+        size_t length() const { return data.size(); }
+        void describe() const { cout << "Generic sequence: " << data << "\n"; }
+        static int getCount() { return count; }
+        const string& getData() const { return data; }
+    };
+    int Sequence::count = 0;
 
-// Class that represents a gene with id, name, chromosomal position and strand
-class Gene { // begin definition of the Gene class
-private: // private section for internal data
-    std::string id_; // private member to store gene identifier (e.g., "ENSG1234")
-    std::string name_; // private member to store gene name (e.g., "BRCA1")
-    std::string chrom_; // private member to store chromosome (e.g., "chr17")
-    long long start_ = 0; // private member to store start coordinate (using long long for large genomic positions)
-    long long end_ = 0; // private member to store end coordinate
-    char strand_ = '+'; // private member to store strand ('+' or '-') with default '+'
+    /* ============================================================
+       DNASequence
+       ============================================================ */
+    class DNASequence : public Sequence {
+    public:
+        DNASequence(const string& d) : Sequence(d) { cout << "DNASequence created\n"; }
+        ~DNASequence() { cout << "DNASequence destroyed\n"; }
+        void describe() const { cout << "DNA sequence: " << data << "\n"; }
+        static bool isValidBase(char c) { char u = toupper(static_cast<unsigned char>(c)); return u=='A'||u=='C'||u=='G'||u=='T'; }
+        bool isValid() const { for (char c : data) if (!isValidBase(c)) return false; return true; }
+    };
 
-public: // public section for constructors and accessors
-    // Constructors
-    Gene() = default; // default constructor (compiler-provided)
-    Gene(const std::string& id, const std::string& name, const std::string& chrom, // parameterized constructor
-         long long start, long long end, char strand)
-        : id_(id), name_(name), chrom_(chrom), start_(start), end_(end), strand_(strand) {} // initialize members
+    /* ============================================================
+       RNASequence
+       ============================================================ */
+    class RNASequence : public Sequence {
+    public:
+        RNASequence(const string& d) : Sequence(d) { cout << "RNASequence created\n"; }
+        ~RNASequence() { cout << "RNASequence destroyed\n"; }
+        void describe() const { cout << "RNA sequence: " << data << "\n"; }
+        static bool isValidBase(char c) { char u = toupper(static_cast<unsigned char>(c)); return u=='A'||u=='C'||u=='G'||u=='U'; }
+        bool isValid() const { for (char c : data) if (!isValidBase(c)) return false; return true; }
+    };
 
-    // Setters
-    void setId(const std::string& id) { id_ = id; } // set id_
-    void setName(const std::string& name) { name_ = name; } // set name_
-    void setChrom(const std::string& chrom) { chrom_ = chrom; } // set chrom_
-    void setStart(long long start) { start_ = start; } // set start_
-    void setEnd(long long end) { end_ = end; } // set end_
-    void setStrand(char strand) { strand_ = strand; } // set strand_
+    /* ============================================================
+       ProteinSequence
+       ============================================================ */
+    class ProteinSequence : public Sequence {
+    public:
+        ProteinSequence(const string& d) : Sequence(d) { cout << "ProteinSequence created\n"; }
+        ~ProteinSequence() { cout << "ProteinSequence destroyed\n"; }
+        void describe() const { cout << "Protein sequence: " << data << "\n"; }
+        static bool isValidAA(char c) { const string valid = "ACDEFGHIKLMNPQRSTVWY"; char u = toupper(static_cast<unsigned char>(c)); return valid.find(u) != string::npos; }
+        bool isValid() const { for (char c : data) if (!isValidAA(c)) return false; return true; }
+    };
 
-    // Getters
-    const std::string& getId() const { return id_; } // return id_ by const reference
-    const std::string& getName() const { return name_; } // return name_ by const reference
-    const std::string& getChrom() const { return chrom_; } // return chrom_ by const reference
-    long long getStart() const { return start_; } // return start_ value
-    long long getEnd() const { return end_; } // return end_ value
-    char getStrand() const { return strand_; } // return strand_ value
+    /* ============================================================
+       Isoform: contains an RNASequence
+       ============================================================ */
+    class Isoform {
+    private:
+        string id;
+        string name;
+        RNASequence seq;
+    public:
+        Isoform(const string& i, const string& n, const string& rna) : id(i), name(n), seq(rna) {
+            cout << "Isoform created: " << name << "\n";
+            if (!seq.isValid()) cout << "Warning: invalid RNA bases in " << name << "\n";
+        }
+        ~Isoform() { cout << "Isoform destroyed: " << name << "\n"; }
+        void describe() const { cout << "Isoform " << id << " (" << name << ")\n"; seq.describe(); cout << "Length: " << seq.length() << " bases\n"; }
+    };
 
-    // describe method: prints "Gene NAME (chrom:start-end, strand)."
-    void describe() const { // describe is const (no modification)
-        std::cout << "Gene " << name_ // print "Gene " followed by the gene name
-                  << " (" << chrom_ << ":" << start_ << "-" << end_ << ", " << strand_ << ")." // print position and strand in the requested format
-                  << std::endl; // end the line
-    } // end of describe
-}; // end of Gene class
+    /* ============================================================
+       Gene: contains vector<Isoform>
+       ============================================================ */
+    class Gene {
+    private:
+        string id;
+        string name;
+        string chrom;
+        int start;
+        int end;
+        char strand;
+        vector<Isoform> isoforms;
+    public:
+        Gene(const string& gid, const string& gname, const string& chr, int s, int e, char st) : id(gid), name(gname), chrom(chr), start(s), end(e), strand(st) { cout << "Gene created: " << name << "\n"; }
+        ~Gene() { cout << "Gene destroyed: " << name << "\n"; }
+        void addIsoform(const Isoform& iso) { isoforms.push_back(iso); }
+        void createIsoform(const string& i, const string& n, const string& rna) { isoforms.emplace_back(i,n,rna); }
+        void describe() const { cout << "Gene " << id << " (" << name << ") on " << chrom << ":" << start << "-" << end << " (" << strand << " strand)\n"; cout << "Active sequences: " << Sequence::getCount() << "\n"; if (isoforms.empty()) { cout << "No isoforms\n"; return; } cout << "Isoforms:\n"; for (const auto& iso : isoforms) iso.describe(); }
+    };
 
-int main() { // main function: program entry point
-    // Example: create a Protein with id, name and sequence
-    Protein p1("ENSP1234", "PTEN", "MTAIIKEIVSRNKRRYQEDGFDLDLTYIYPNIIAMGFPA"); // construct a Protein object with given values
-    p1.describe(); // call describe on p1 -> prints: PTEN MTAIIKEIVSRNKRRYQEDGFDLDLTYIYPNIIAMGFPA
+    /* ============================================================
+       MAIN
+       ============================================================ */
+    int main() {
+        cout << "--- Testing standalone sequences ---\n";
+        DNASequence dna("ACGTACGT"); dna.describe(); cout << "Valid? " << (dna.isValid() ? "Yes" : "No") << "\n";
+        RNASequence rna("AUGCCAGGAU"); rna.describe(); cout << "Valid? " << (rna.isValid() ? "Yes" : "No") << "\n";
+        ProteinSequence prot("MTAKPL"); prot.describe(); cout << "Valid? " << (prot.isValid() ? "Yes" : "No") << "\n";
+        cout << "Active sequences now: " << Sequence::getCount() << "\n\n";
 
-    // Example: using setters (demonstrates the user-provided line)
-    Protein p2; // default-construct a Protein object
-    p2.setName("PTEN"); // set the name to "PTEN"
-    p2.setSequence("MTAIIKEIVSRNKRRYQEDGFDLDLTYIYPNIIAMGFPA"); // set the sequence to the provided sequence
-    p2.describe(); // call describe on p2 -> prints the same name and sequence
-
-    // Example Gene
-    Gene g("ENSG1234", "BRCA1", "chr17", 43044295, 43170245, '+'); // construct a Gene object with id, name, chromosome, start, end, strand
-    g.describe(); // call describe on g -> prints: Gene BRCA1 (chr17:43044295-43170245, +).
-
-    return 0; // return 0 to indicate successful execution
-} // end of main
+        cout << "--- Gene with Isoforms ---\n";
+        Gene g("ENSG000001", "TP53", "chr17", 7668402, 7687550, '-');
+        g.createIsoform("ENST0001", "TP53-201", "AUGGCCAUGGCGCCC");
+        g.createIsoform("ENST0002", "TP53-202", "AUGCCUGAUGCUGUAG");
+        Isoform extra("ENST0003", "TP53-203", "AUGGCUAUGGCUUU");
+        g.addIsoform(extra);
+        cout << "\nCalling g.describe():\n";
+        g.describe();
+        cout << "\n--- End of main ---\n";
+        return 0;
+    }
+ 
